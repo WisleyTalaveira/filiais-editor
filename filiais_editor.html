@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editor de Filiais</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #222222;
+    --border: #2e2e2e;
+    --border2: #3a3a3a;
+    --accent: #00d4a0;
+    --accent-dim: rgba(0,212,160,0.08);
+    --accent-dim2: rgba(0,212,160,0.15);
+    --text: #e8e8e8;
+    --text2: #888;
+    --text3: #555;
+    --danger: #ff4444;
+    --danger-dim: rgba(255,68,68,0.08);
+    --warn: #f5a623;
+    --radius: 6px;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* LOGIN */
+  #login-screen {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .login-box {
+    width: 360px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 40px 36px;
+    text-align: center;
+  }
+
+  .login-box .logo {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .login-box h1 { font-size: 20px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+  .login-box p  { font-size: 13px; color: var(--text2); margin-bottom: 28px; }
+
+  .login-box input[type="password"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+    font-size: 14px;
+    font-family: var(--mono);
+    color: var(--text);
+    outline: none;
+    letter-spacing: .12em;
+    margin-bottom: 12px;
+    transition: border-color .2s;
+  }
+
+  .login-box input[type="password"]:focus { border-color: var(--accent); }
+
+  .login-box .btn-login {
+    width: 100%;
+    background: var(--accent);
+    color: #0f0f0f;
+    border: none;
+    border-radius: var(--radius);
+    padding: 11px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--sans);
+    cursor: pointer;
+    letter-spacing: .04em;
+    transition: opacity .15s;
+  }
+
+  .login-box .btn-login:hover { opacity: .85; }
+
+  .login-error {
+    font-size: 12px;
+    color: var(--danger);
+    margin-top: 10px;
+    min-height: 16px;
+    font-family: var(--mono);
+  }
+
+  /* APP */
+  #app-screen {
+    display: none;
+    width: 100%;
+    min-height: 100vh;
+    flex-direction: column;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 14px; }
+
+  .header-logo {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    padding: 4px 10px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+  }
+
+  .header-title { font-size: 14px; font-weight: 400; color: var(--text2); }
+
+  .header-right { display: flex; align-items: center; gap: 10px; }
+
+  .sync-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text3);
+  }
+
+  .sync-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--text3);
+    transition: background .3s;
+  }
+
+  .sync-dot.ok    { background: var(--accent); }
+  .sync-dot.busy  { background: var(--warn); animation: pulse .8s infinite; }
+  .sync-dot.error { background: var(--danger); }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; } 50% { opacity: .3; }
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px;
+    border-radius: var(--radius);
+    font-size: 12px; font-weight: 500; font-family: var(--sans);
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    color: var(--text);
+    transition: all .15s;
+    letter-spacing: .02em;
+  }
+
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn:not(:disabled):hover { background: #2a2a2a; }
+  .btn.primary { background: var(--accent-dim2); border-color: var(--accent); color: var(--accent); }
+  .btn.primary:not(:disabled):hover { background: rgba(0,212,160,.22); }
+  .btn.danger  { background: var(--danger-dim);  border-color: var(--danger); color: var(--danger); }
+  .btn.danger:not(:disabled):hover  { background: rgba(255,68,68,.15); }
+  .btn.ghost   { background: transparent; border-color: transparent; color: var(--text2); }
+  .btn.ghost:not(:disabled):hover   { color: var(--text); background: var(--surface2); border-color: var(--border); }
+
+  .main { padding: 24px 28px; flex: 1; }
+
+  .toolbar {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 16px; flex-wrap: wrap;
+  }
+
+  .search-wrap {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 0 12px;
+    flex: 1; min-width: 200px; max-width: 360px;
+    transition: border-color .2s;
+  }
+
+  .search-wrap:focus-within { border-color: var(--accent); }
+  .search-wrap svg { color: var(--text3); flex-shrink: 0; }
+
+  .search-wrap input {
+    background: transparent; border: none; outline: none;
+    font-size: 13px; color: var(--text); font-family: var(--sans);
+    padding: 8px 0; width: 100%;
+  }
+
+  .search-wrap input::placeholder { color: var(--text3); }
+
+  select.filter-sel {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    font-size: 12px; color: var(--text); font-family: var(--sans);
+    cursor: pointer; outline: none;
+    transition: border-color .2s;
+  }
+
+  select.filter-sel:focus { border-color: var(--accent); }
+
+  .stats-bar {
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 14px; flex-wrap: wrap;
+  }
+
+  .stat-item { font-size: 11px; font-family: var(--mono); color: var(--text2); }
+  .stat-item span { color: var(--accent); font-weight: 600; }
+
+  .badge {
+    display: inline-block;
+    font-size: 10px; font-family: var(--mono); font-weight: 500;
+    padding: 2px 8px; border-radius: 20px; letter-spacing: .03em;
+  }
+
+  .b-supra { background: rgba(0,212,160,.1);  color: #00d4a0; border: 1px solid rgba(0,212,160,.25); }
+  .b-cax   { background: rgba(100,180,255,.1);color: #64b4ff; border: 1px solid rgba(100,180,255,.25); }
+  .b-cach  { background: rgba(245,166,35,.1); color: #f5a623; border: 1px solid rgba(245,166,35,.25); }
+  .b-bento { background: rgba(200,130,255,.1);color: #c882ff; border: 1px solid rgba(200,130,255,.25); }
+  .b-na    { background: rgba(120,120,120,.1);color: #888;    border: 1px solid rgba(120,120,120,.25); }
+
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .table-scroll { max-height: calc(100vh - 280px); overflow-y: auto; }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  thead th {
+    background: var(--surface2);
+    padding: 10px 16px;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 10px; font-weight: 600;
+    letter-spacing: .12em; text-transform: uppercase;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 2;
+  }
+
+  thead th:last-child { width: 52px; text-align: center; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .1s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,.025); }
+  tbody tr.new-row { animation: rowIn .25s ease; }
+  tbody tr.saving  { opacity: .5; }
+
+  @keyframes rowIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  tbody td { padding: 5px 8px; }
+  tbody td:last-child { text-align: center; padding: 4px 6px; }
+
+  input.cell {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 5px 8px;
+    font-size: 13px; font-family: var(--mono); color: var(--text);
+    width: 100%; outline: none;
+    transition: border-color .15s, background .15s;
+  }
+
+  input.cell:focus { border-color: var(--accent); background: var(--accent-dim); }
+  input.cell::placeholder { color: var(--text3); }
+
+  select.cell-sel {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 5px 8px;
+    font-size: 13px; font-family: var(--sans); color: var(--text);
+    width: 100%; outline: none; cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+
+  select.cell-sel:focus { border-color: var(--accent); background: var(--surface2); }
+  select.cell-sel option { background: #1a1a1a; }
+
+  .btn-del {
+    background: none; border: none; cursor: pointer;
+    color: var(--text3); padding: 5px 8px; border-radius: 4px;
+    font-size: 15px; line-height: 1;
+    transition: color .15s, background .15s;
+  }
+
+  .btn-del:hover { color: var(--danger); background: var(--danger-dim); }
+
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--text3); }
+  .empty-state p { font-size: 13px; font-family: var(--mono); }
+
+  /* loading skeleton */
+  .skeleton-row td { padding: 10px 16px; }
+  .skeleton-bar {
+    height: 12px; border-radius: 4px;
+    background: linear-gradient(90deg, var(--surface2) 25%, #2a2a2a 50%, var(--surface2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.2s infinite;
+  }
+
+  @keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* toast */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    font-size: 12px; font-family: var(--mono); color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+    opacity: 0; transform: translateY(8px);
+    transition: opacity .2s, transform .2s;
+    pointer-events: none; z-index: 999;
+  }
+
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  .toast.err .dot { background: var(--danger); }
+
+  /* modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.7); z-index: 100;
+    align-items: center; justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 10px; padding: 28px; width: 340px; text-align: center;
+  }
+
+  .modal h3 { font-size: 15px; font-weight: 500; margin-bottom: 8px; }
+  .modal p  { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+  .modal-btns { display: flex; gap: 10px; justify-content: center; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="logo">Conta Inovar</div>
+    <h1>Editor de Filiais</h1>
+    <p>Digite a senha para continuar</p>
+    <input type="password" id="pwd-input" placeholder="••••••" autocomplete="current-password">
+    <button class="btn-login" onclick="doLogin()">Entrar</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <header>
+    <div class="header-left">
+      <span class="header-logo">CI</span>
+      <span class="header-title">auxiliar_vendedores</span>
+    </div>
+    <div class="header-right">
+      <div class="sync-indicator">
+        <div class="sync-dot" id="syncDot"></div>
+        <span id="syncLabel">—</span>
+      </div>
+      <button class="btn ghost" onclick="doLogout()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sair
+      </button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="searchInput" placeholder="Buscar código ou filial..." oninput="renderTable()">
+      </div>
+      <select class="filter-sel" id="filterSel" onchange="renderTable()">
+        <option value="">Todas as filiais</option>
+        <option>SUPERACO</option>
+        <option>Regional Caxias do Sul</option>
+        <option>Regional Cachoeirinha</option>
+        <option>Regional Bento Goncalves</option>
+        <option>N/A</option>
+      </select>
+      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="loadData()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Recarregar
+        </button>
+        <button class="btn primary" onclick="addRow()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nova linha
+        </button>
+      </div>
+    </div>
+
+    <div class="stats-bar" id="statsBar"></div>
+
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:60px">id</th>
+              <th style="width:140px">vd1codig</th>
+              <th>ds_filial</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR REMOÇÃO -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <h3>Remover registro?</h3>
+    <p id="deleteModalDesc">Esta ação não pode ser desfeita.</p>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      <button class="btn danger" id="btnConfirmDelete" onclick="confirmDelete()">Remover</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="dot"></div><span id="toast-msg"></span></div>
+
+<script>
+const SENHA       = 'super';
+const SUPA_URL    = 'https://fiyvyoynllrdfpcabkqw.supabase.co';
+const SUPA_KEY    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpeXZ5b3lubGxyZGZwY2Fia3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExODQzODIsImV4cCI6MjA5Njc2MDM4Mn0.EIjC_5ZZHt2UNeSwy4Fsbd3Z761w2ulYNqvApnA3Xr4';
+const TABLE       = 'auxiliar_vendedores';
+
+const FILIAIS = ['SUPERACO','Regional Caxias do Sul','Regional Cachoeirinha','Regional Bento Goncalves','N/A'];
+
+const BADGE_CLASS = {
+  'SUPERACO':'b-supra',
+  'Regional Caxias do Sul':'b-cax',
+  'Regional Cachoeirinha':'b-cach',
+  'Regional Bento Goncalves':'b-bento',
+  'N/A':'b-na'
+};
+
+let rows = [];
+let deleteRowId = null;
+let debounceTimers = {};
+
+// ── SUPABASE HELPERS ──
+const headers = {
+  'apikey': SUPA_KEY,
+  'Authorization': 'Bearer ' + SUPA_KEY,
+  'Content-Type': 'application/json',
+  'Prefer': 'return=representation'
+};
+
+async function sbGet() {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${TABLE}?select=*&order=vd1codig.asc`, { headers });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function sbInsert(row) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${TABLE}`, {
+    method: 'POST', headers,
+    body: JSON.stringify({ vd1codig: parseInt(row.vd1codig) || 0, ds_filial: row.ds_filial })
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function sbUpdate(id, vd1codig, ds_filial) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${TABLE}?id=eq.${id}`, {
+    method: 'PATCH', headers,
+    body: JSON.stringify({ vd1codig: parseInt(vd1codig) || 0, ds_filial })
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function sbDelete(id) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${TABLE}?id=eq.${id}`, {
+    method: 'DELETE', headers
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+// ── SYNC INDICATOR ──
+function syncSet(state, label) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  dot.className = 'sync-dot ' + state;
+  lbl.textContent = label;
+}
+
+// ── AUTH ──
+function doLogin() {
+  const val = document.getElementById('pwd-input').value;
+  if (val === SENHA) {
+    document.getElementById('login-screen').style.display = 'none';
+    const app = document.getElementById('app-screen');
+    app.style.display = 'flex';
+    app.style.flexDirection = 'column';
+    loadData();
+  } else {
+    const err = document.getElementById('login-error');
+    err.textContent = 'Senha incorreta.';
+    document.getElementById('pwd-input').value = '';
+    document.getElementById('pwd-input').focus();
+    setTimeout(() => err.textContent = '', 2500);
+  }
+}
+
+function doLogout() {
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('pwd-input').value = '';
+  rows = [];
+}
+
+document.getElementById('pwd-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+// ── LOAD ──
+async function loadData() {
+  syncSet('busy', 'carregando...');
+  showSkeleton();
+  try {
+    rows = await sbGet();
+    renderTable();
+    syncSet('ok', `${rows.length} registros`);
+  } catch(e) {
+    syncSet('error', 'erro ao carregar');
+    toast('Erro ao carregar dados', true);
+    console.error(e);
+  }
+}
+
+function showSkeleton() {
+  const tb = document.getElementById('tbody');
+  tb.innerHTML = Array(8).fill(0).map(() => `
+    <tr class="skeleton-row">
+      <td><div class="skeleton-bar" style="width:30px"></div></td>
+      <td><div class="skeleton-bar" style="width:60px"></div></td>
+      <td><div class="skeleton-bar" style="width:180px"></div></td>
+      <td></td>
+    </tr>`).join('');
+}
+
+// ── RENDER ──
+function getFiltered() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const f = document.getElementById('filterSel').value;
+  return rows.filter(r => {
+    const mq = !q || String(r.vd1codig).includes(q) || r.ds_filial.toLowerCase().includes(q);
+    const mf = !f || r.ds_filial === f;
+    return mq && mf;
+  });
+}
+
+function renderTable() {
+  const filtered = getFiltered();
+  const tb = document.getElementById('tbody');
+  tb.innerHTML = '';
+
+  if (filtered.length === 0) {
+    tb.innerHTML = `<tr><td colspan="4"><div class="empty-state"><p>nenhum registro encontrado</p></div></td></tr>`;
+    updateStats(0);
+    return;
+  }
+
+  filtered.forEach(r => {
+    const opts = FILIAIS.map(f =>
+      `<option value="${f}"${f === r.ds_filial ? ' selected' : ''}>${f}</option>`
+    ).join('');
+    const tr = document.createElement('tr');
+    tr.dataset.id = r.id;
+    tr.innerHTML = `
+      <td style="color:var(--text3);font-family:var(--mono);font-size:11px;padding-left:16px">${r.id}</td>
+      <td><input class="cell" value="${esc(String(r.vd1codig))}" placeholder="código"
+        oninput="scheduleUpdate(${r.id},'vd1codig',this.value)"></td>
+      <td>
+        <select class="cell-sel" onchange="scheduleUpdate(${r.id},'ds_filial',this.value)">
+          ${opts}
+        </select>
+      </td>
+      <td>
+        <button class="btn-del" onclick="askDelete(${r.id},${r.vd1codig})" title="Remover">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6"/><path d="M14 11v6"/>
+            <path d="M9 6V4h6v2"/>
+          </svg>
+        </button>
+      </td>`;
+    tb.appendChild(tr);
+  });
+
+  updateStats(filtered.length);
+}
+
+function updateStats(visible) {
+  const total = rows.length;
+  const counts = {};
+  rows.forEach(r => { counts[r.ds_filial] = (counts[r.ds_filial] || 0) + 1; });
+
+  const badges = Object.entries(counts)
+    .sort((a,b) => b[1]-a[1])
+    .map(([k,v]) => `<span class="badge ${BADGE_CLASS[k]||'b-na'}">${k} ${v}</span>`)
+    .join(' ');
+
+  const visStr = visible !== total
+    ? ` &nbsp;·&nbsp; <span style="color:var(--warn)">${visible} visíveis</span>`
+    : '';
+
+  document.getElementById('statsBar').innerHTML =
+    `<span class="stat-item">total <span>${total}</span></span>${visStr} &nbsp;·&nbsp; ${badges}`;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+// ── AUTO SAVE (debounce 800ms) ──
+function scheduleUpdate(id, field, value) {
+  const row = rows.find(r => r.id === id);
+  if (!row) return;
+  row[field === 'vd1codig' ? 'vd1codig' : 'ds_filial'] = value;
+  updateStats(getFiltered().length);
+
+  clearTimeout(debounceTimers[id]);
+  debounceTimers[id] = setTimeout(() => saveRow(id), 800);
+}
+
+async function saveRow(id) {
+  const row = rows.find(r => r.id === id);
+  if (!row) return;
+  const tr = document.querySelector(`tr[data-id="${id}"]`);
+  if (tr) tr.classList.add('saving');
+  syncSet('busy', 'salvando...');
+  try {
+    await sbUpdate(id, row.vd1codig, row.ds_filial);
+    if (tr) tr.classList.remove('saving');
+    syncSet('ok', `${rows.length} registros`);
+  } catch(e) {
+    if (tr) tr.classList.remove('saving');
+    syncSet('error', 'erro ao salvar');
+    toast('Erro ao salvar', true);
+    console.error(e);
+  }
+}
+
+// ── ADD ROW ──
+async function addRow() {
+  syncSet('busy', 'inserindo...');
+  try {
+    const [inserted] = await sbInsert({ vd1codig: 0, ds_filial: 'N/A' });
+    rows.unshift(inserted);
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterSel').value = '';
+    renderTable();
+    syncSet('ok', `${rows.length} registros`);
+    setTimeout(() => {
+      const first = document.querySelector('#tbody tr:first-child input.cell');
+      if (first) { first.select(); first.closest('tr').classList.add('new-row'); }
+    }, 30);
+    toast('Linha inserida');
+  } catch(e) {
+    syncSet('error', 'erro ao inserir');
+    toast('Erro ao inserir', true);
+    console.error(e);
+  }
+}
+
+// ── DELETE ──
+function askDelete(id, codig) {
+  deleteRowId = id;
+  document.getElementById('deleteModalDesc').textContent = `Remover vd1codig ${codig}?`;
+  document.getElementById('deleteModal').classList.add('open');
+}
+
+function closeModal() {
+  deleteRowId = null;
+  document.getElementById('deleteModal').classList.remove('open');
+}
+
+async function confirmDelete() {
+  if (!deleteRowId) return;
+  const id = deleteRowId;
+  document.getElementById('btnConfirmDelete').disabled = true;
+  syncSet('busy', 'removendo...');
+  try {
+    await sbDelete(id);
+    rows = rows.filter(r => r.id !== id);
+    closeModal();
+    renderTable();
+    syncSet('ok', `${rows.length} registros`);
+    toast('Registro removido');
+  } catch(e) {
+    syncSet('error', 'erro ao remover');
+    toast('Erro ao remover', true);
+    console.error(e);
+  } finally {
+    document.getElementById('btnConfirmDelete').disabled = false;
+  }
+}
+
+// ── TOAST ──
+let toastTimer;
+function toast(msg, isErr = false) {
+  const el = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  el.classList.toggle('err', isErr);
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// fechar modal clicando fora
+document.getElementById('deleteModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('deleteModal')) closeModal();
+});
+</script>
+</body>
+</html>
